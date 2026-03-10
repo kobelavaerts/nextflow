@@ -202,6 +202,10 @@ process cat {
 
 ### Custom file staging
 
+:::{versionchanged} 26.04.0
+The method signature for `stageAs` was changed from `(filePattern, value)` to `(value, filePattern)`.
+:::
+
 The `stageAs` directive stages an input file (or files) under a custom file pattern:
 
 ```nextflow
@@ -210,7 +214,7 @@ process blast {
     fasta: Path
 
     stage:
-    stageAs 'query.fa', fasta
+    stageAs fasta, 'query.fa'
 
     script:
     """
@@ -228,7 +232,7 @@ process grep {
     fasta: Path
 
     stage:
-    stageAs "${id}.fa", fasta
+    stageAs fasta, "${id}.fa"
 
     script:
     """
@@ -236,6 +240,28 @@ process grep {
     """
 }
 ```
+
+:::{versionadded} 26.04.0
+:::
+
+Input files can be staged using a *staging closure* instead of a file pattern:
+
+```nextflow
+process find {
+    input:
+    slice: Set<Path>
+
+    stage:
+    stageAs(slice) { file -> "${file.parent}/${file.name}.txt" }
+
+    script:
+    """
+    find . -name "*"
+    """
+}
+```
+
+The staging closure should define the stage name for a given input file.
 
 See {ref}`process-reference-typed` for available stage directives.
 
@@ -316,7 +342,10 @@ process fastqc {
     }
 
     output:
-    record(id: sample.id, fastqc: file('fastqc_logs'))
+    record(
+        id: sample.id,
+        fastqc: file('fastqc_logs')
+    )
 
     script:
     // ...

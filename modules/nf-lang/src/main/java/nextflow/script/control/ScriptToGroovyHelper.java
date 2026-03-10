@@ -125,7 +125,7 @@ public class ScriptToGroovyHelper {
             return node;
         var vars = new VariableCollector().collect(node);
         if( !vars.isEmpty() )
-            return closureX(stmt(node));
+            return closureX(null, stmt(node));
         return node;
     }
 

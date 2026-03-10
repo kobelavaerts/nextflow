@@ -73,11 +73,14 @@ The following directives can be used in the `stage:` section of a typed process:
 `env( name: String, String value )`
 : Declares an environment variable with the specified name and value in the task environment.
 
-`stageAs( filePattern: String, value: Path )`
+`stageAs( value: Path, filePattern: String )`
 : Stages a file into the task directory under the given alias.
 
-`stageAs( filePattern: String, value: Iterable<Path> )`
+`stageAs( value: Iterable<Path>, filePattern: String )`
 : Stages a collection of files into the task directory under the given alias.
+
+`stageAs( value: Iterable<Path>, transform: (Path) -> String )`
+: Stage a collection of files into the task directory with an alias determined by the given closure.
 
 `stdin( value: String )`
 : Stages the given value as the standard input (i.e., `stdin`) to the task script.
