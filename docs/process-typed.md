@@ -252,7 +252,7 @@ process find {
     slice: Set<Path>
 
     stage:
-    stageAs(slice) { file -> "${file.parent}/${file.name}.txt" }
+    stageAs(slice) { file -> "${file.parent.name}/${file.name}.txt" }
 
     script:
     """
