@@ -247,16 +247,16 @@ process grep {
 Input files can be staged using a *staging closure* instead of a file pattern:
 
 ```nextflow
-process find {
+process ls {
     input:
     slice: Set<Path>
 
     stage:
-    stageAs(slice) { file -> "${file.parent.name}/${file.name}.txt" }
+    stageAs(slice) { file -> "${file.parent.name}/${file.name}" }
 
     script:
     """
-    find . -name "*"
+    ls -1 */*.txt | sort
     """
 }
 ```
