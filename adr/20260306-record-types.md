@@ -67,7 +67,7 @@ This function effectively creates an immutable map (`Map<String,?>`):
 
 - The keys are just field names
 - The values can have any type
-- The record can’t be modified -- use the `+` operator instead
+- The record can't be modified -- use the `+` operator instead
 
 Records can have arbitrary fields, unlike custom classes, which makes them easy to use with dataflow operators.
 
@@ -357,7 +357,7 @@ process PROKKA {
 
     output:
     record(
-        id: sample.meta.id,
+        meta: sample.meta,
         gff: file("${prefix}/*.gff"),
         gbk: file("${prefix}/*.gbk"),
         fna: file("${prefix}/*.fna"),

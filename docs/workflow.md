@@ -267,7 +267,7 @@ output {
     samples {
         path { sample ->
             sample.fastqc >> "fastqc"
-            sample.bam >> params.save_bams ? "align" : null
+            sample.bam >> (params.save_bams ? "align" : null)
         }
     }
 }

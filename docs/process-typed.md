@@ -316,7 +316,10 @@ process fastqc {
     }
 
     output:
-    record(id: sample.id, fastqc: file('fastqc_logs'))
+    record(
+        id: sample.id,
+        fastqc: file('fastqc_logs')
+    )
 
     script:
     // ...
