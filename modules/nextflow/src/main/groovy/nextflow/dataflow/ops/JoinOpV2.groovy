@@ -76,8 +76,8 @@ class JoinOpV2 {
         return result
     }
 
-    private Map<?,Collection<Map>> mappingsLeft = [:]
-    private Map<?,Collection<Map>> mappingsRight = [:]
+    private Map<?,Collection<RecordMap>> mappingsLeft = [:]
+    private Map<?,Collection<RecordMap>> mappingsRight = [:]
     private Set<?> emitted = []
     private int count = 2
 
