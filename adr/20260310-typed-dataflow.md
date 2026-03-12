@@ -320,6 +320,119 @@ Named arguments can be used with a process under the following conditions:
 
 This approach resolves the aforementioned trade-off, allowing the process definition to be maximally flexible (one big record input) without making the process call more verbose in the most common use case.
 
+## How to distinguish between typed and legacy dataflow?
+
+Static typing has been introduced as multiple independent features:
+
+- Type annotations
+- Typed parameters (`params` block)
+- Typed outputs (`output` block)
+- Typed processes
+- Record types
+- Typed dataflow (this proposal)
+
+This approach was done in contrast to DSL2, which was a monolithic change that required an entire pipeline to be updated at once. With static typing, each new feature can be adopted independently of the others, rather than requiring all new features to be adopted at once (e.g. "DSL3").
+
+However, the challenge with this approach is to make sure that it is easy for users (and agents) to distinguish between new and old syntax.
+
+Several alternative approaches are considered below:
+
+### Option 1: Use `nextflow.enable.types` to enable typed processes and typed dataflow
+
+Most of the features for static typing are *purely additive* -- they are new concepts that can be used alongside existing code. However, typed processes and typed dataflow modify existing concepts (`process` and `workflow` definitions), so they require the `nextflow.preview.types` feature flag.
+
+This preview flag will be replaced by `nextflow.enable.types` once the feature set is stable, and this flag would likely be used indefinitely to distinguish between typed and legacy code. It would only be removed if the support for legacy syntax was removed, which is unlikely since DSL2 has been the standard Nextflow syntax for many years.
+
+The syntax for typed processes is significantly different, such that a feature flag seems appropriate. However, typed dataflow looks similar to legacy dataflow, but has slightly different semantics. A feature flag may not be enough to signal the difference to users and agents, even if it is sufficient for the compiler and language server.
+
+### Option 2: Use `nextflow.enable.types` to enable all static typing
+
+Now that the entire language has been updated to support static typing, it could make sense to provide it as a single feature controlled by a single feature flag:
+
+```groovy
+// "dynamically typed" code
+// nextflow.enable.types = true
+
+// "statically typed" code
+nextflow.enable.types = true
+```
+
+Even though these features can be adopted independently in principle, they are designed to work together, and in practice it is difficult to adopt one feature without the others:
+
+- Migrating a large pipeline to workflow outputs is very difficult without also migrating to typed processes and record types.
+- Adopting type annotations (e.g. for workflow takes and emits) can provide some basic documentation and validation, but most workflow logic still cannot be effectively validated by the type checker without typed processes.
+
+Enabling all static typing features via `nextflow.enable.types` would establish a clear boundary between *statically typed* code and *dynamically typed* code. This way, the poor distinction between typed dataflow vs legacy dataflow is made up by the clear distinction of type annotations, record types, etc in the same context.
+
+Since type annotations and typed parameters were introduced in Nextflow 25.10 as stable, requiring a feature flag for them in 26.04 would be a breaking change. However, this break might be acceptable for now since these features are still new and many users are waiting for full static typing anyway. These features could be allowed with a warning in 26.04 to ease the transition.
+
+See also: static compilation in Groovy via `@CompileStatic`
+
+### Option 3: Enable new operators via `include` declaration
+
+Since operators are methods of the `Channel` type, new operators can be understood as a new `Channel` type / `channel` namespace. Therefore, the new operators could be introduced simply by including a different version of `Channel` or `channel`:
+
+```groovy
+// legacy operators (default)
+// include { channel } from 'dataflow/v1'
+
+// typed operators
+include { channel } from 'dataflow/v2'
+```
+
+This approach is similar to using a feature flag, but it more clearly expresses the intent of using the new operators. The other aspects of typed dataflow -- removal of certain syntax patterns, process named arguments -- could also be enabled by this include or by the `nextflow.enable.types` feature flag.
+
+Either way, the feature flag will still be needed to enable typed processes, so users will end up using both the feature flag and include across their scripts. This might be more complicated than just using a feature flag.
+
+### Option 4: Use new operator names in typed dataflow
+
+Typed dataflow could simply rename all operators that were changed. This would clearly distinguish typed dataflow from legacy dataflow.
+
+The problem of semantic changes essentially comes down to `cross` and `join`:
+
+- `groupBy` was renamed from `groupTuple`
+- all other operators are effectively identical, with minor differences that amount to bug fixes
+
+Even `join` will be distinct in typed dataflow because it will join on record fields instead of tuple indices:
+
+```groovy
+// legacy dataflow
+left.join(right, by: 0)
+
+// typed dataflow
+left.join(right, by: 'id')
+```
+
+Some possible names:
+
+- `cross` -> `crossV2`, `crossProduct`, `crossJoin`, `combine`
+- `join` -> `joinV2`, `joinBy`, `joinInner` (remainder: false), `joinOuter` (remainder: true), `combineBy`
+
+Ironically, the new operators are more true to their names than the old ones:
+
+- `cross` now performs a true cross product (the legacy `cross` implicitly joined on matching keys)
+- `join` now performs a true relational join (the legacy `join` did not handle duplicates correctly)
+
+Ultimately, new operator names alone might not be enough to signal the other aspects of typed dataflow, such as the removal of many other operators and syntax patterns.
+
+### Option 5: Replace `process` and `workflow` with `task` and `flow`
+
+The key issue is that typed processes and typed dataflow modify existing concepts (processes and workflows) rather than adding to them. Instead, we could make these features purely additive by introducing them as new top-level concepts:
+
+```groovy
+// legacy semantics
+process FASTQC { /* ... */ }
+workflow RNASEQ { /* ... */ }
+
+// typed semantics
+task FASTQC { /* ... */ }
+flow RNASEQ { /* ... */ }
+```
+
+This approach would make the distinction very clear. However, this change would be a significant break, since *processes* and *workflows* are long-standing and fundamental ideas in Nextflow. Users think about Nextflow pipelines in terms of *processes* and *workflows*, so introducing new terminology would be confusing.
+
+See also: [Prefect](https://www.prefect.io/prefect/open-source) (uses `@task` and `@flow` in their DSL)
+
 ## Alternatives
 
 ### Processes in operator closures
