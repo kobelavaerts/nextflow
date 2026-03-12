@@ -1,6 +1,6 @@
 (operator-page)=
 
-# Operators
+# Operators (legacy)
 
 (operator-branch)=
 

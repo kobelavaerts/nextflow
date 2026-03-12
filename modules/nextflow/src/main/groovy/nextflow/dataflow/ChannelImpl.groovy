@@ -301,13 +301,22 @@ class ChannelImpl {
         return new ChannelImpl(target)
     }
 
-    ChannelImpl view(Function<?,?> transform = null) {
+    ChannelImpl view(Map opts = [:], Function<?,?> transform = null) {
+        final newLine = opts.newLine != false
+        final tag = opts.tag as String
+        final dumpNames = session.getDumpChannels()
+        final enabled = tag == null || (
+            dumpNames.collect { it.replace('*','.*') }.find { (tag ?: '') ==~ /$it/ }
+        )
+
         final source = getReadChannel()
         final target = CH.create()
 
         final onNext = { value ->
-            final result = transform != null ? transform.call(value) : value
-            session.printConsole(result?.toString(), true)
+            if( enabled ) {
+                final result = transform != null ? transform.call(value) : value
+                session.printConsole(result?.toString(), newLine)
+            }
             target << value
         }
         final onComplete = {
