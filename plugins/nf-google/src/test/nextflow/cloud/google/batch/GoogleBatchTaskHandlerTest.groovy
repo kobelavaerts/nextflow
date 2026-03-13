@@ -112,6 +112,7 @@ class GoogleBatchTaskHandlerTest extends Specification {
         !instancePolicyOrTemplate.getInstanceTemplate()
         and:
         !instancePolicyOrTemplate.getInstallGpuDrivers()
+        !instancePolicyOrTemplate.getInstallOpsAgent()
         instancePolicy.getAcceleratorsCount() == 0
         instancePolicy.getDisksCount() == 0
         !instancePolicy.getMachineType()
@@ -354,6 +355,49 @@ class GoogleBatchTaskHandlerTest extends Specification {
         and:
         taskGroup.getTaskSpec().getVolumesCount() == 1
         taskGroup.getTaskSpec().getVolumes(0) == GCS_VOL
+    }
+
+    def 'should set install ops agent' () {
+        given:
+        def GCS_VOL = Volume.newBuilder().setGcs(GCS.newBuilder().setRemotePath('foo').build() ).build()
+        def WORK_DIR = CloudStorageFileSystem.forBucket('foo').getPath('/scratch')
+        def CONTAINER_IMAGE = 'debian:latest'
+        def exec = Mock(GoogleBatchExecutor) {
+            getBatchConfig() >> Mock(BatchConfig) {
+                getInstallOpsAgent() >> true
+            }
+        }
+        and:
+        def bean = new TaskBean(workDir: WORK_DIR, inputFiles: [:])
+        def task = Mock(TaskRun) {
+            toTaskBean() >> bean
+            getHashLog() >> 'abcd1234'
+            getWorkDir() >> WORK_DIR
+            getContainer() >> CONTAINER_IMAGE
+            getConfig() >> Mock(TaskConfig) {
+                getCpus() >> 2
+                getResourceLabels() >> [:]
+            }
+        }
+        and:
+        def mounts = ['/mnt/disks/foo/scratch:/mnt/disks/foo/scratch:rw']
+        def volumes = [GCS_VOL]
+        def launcher = new GoogleBatchLauncherSpecMock('bash .command.run', mounts, volumes)
+
+        and:
+        def handler = Spy(new GoogleBatchTaskHandler(task, exec))
+
+        when:
+        def req = handler.newSubmitRequest(task, launcher)
+        then:
+        handler.fusionEnabled() >> false
+        handler.findBestMachineType(_, false) >> null
+
+        and:
+        def allocationPolicy = req.getAllocationPolicy()
+        def instancePolicyOrTemplate = allocationPolicy.getInstances(0)
+        and:
+        instancePolicyOrTemplate.getInstallOpsAgent() == true
     }
 
     def 'should create the trace record' () {

@@ -33,6 +33,7 @@ class BatchConfigTest extends Specification {
         def config = new BatchConfig([:])
         then:
         !config.getSpot()
+        !config.getInstallOpsAgent()
         and:
         config.retryConfig.maxAttempts == 5
         config.maxSpotAttempts == 0
@@ -51,7 +52,8 @@ class BatchConfigTest extends Specification {
             autoRetryExitCodes: [50001, 50003, 50005],
             retryPolicy: [maxAttempts: 10],
             bootDiskImage: 'batch-foo',
-            bootDiskSize: '100GB'
+            bootDiskSize: '100GB',
+            installOpsAgent: true
         ]
 
         when:
@@ -65,6 +67,8 @@ class BatchConfigTest extends Specification {
         and:
         config.bootDiskImage == 'batch-foo'
         config.bootDiskSize == MemoryUnit.of('100GB')
+        and:
+        config.getInstallOpsAgent()
     }
 
 }

@@ -87,6 +87,12 @@ class BatchConfig implements ConfigScope {
 
     @ConfigOption
     @Description("""
+        Enable the installation of the [Google Cloud Ops Agent](https://cloud.google.com/stackdriver/docs/solutions/agents/ops-agent) on VMs (default: `false`).
+    """)
+    final boolean installOpsAgent
+
+    @ConfigOption
+    @Description("""
         Max number of execution attempts of a job interrupted by a Compute Engine Spot reclaim event (default: `0`).
     """)
     final int maxSpotAttempts
@@ -142,6 +148,7 @@ class BatchConfig implements ConfigScope {
         cpuPlatform = opts.cpuPlatform
         gcsfuseOptions = opts.gcsfuseOptions as List<String> ?: DEFAULT_GCSFUSE_OPTS
         installGpuDrivers = opts.installGpuDrivers as boolean
+        installOpsAgent = opts.installOpsAgent as boolean
         maxSpotAttempts = opts.maxSpotAttempts != null ? opts.maxSpotAttempts as int : DEFAULT_MAX_SPOT_ATTEMPTS
         network = opts.network
         networkTags = opts.networkTags as List<String> ?: Collections.emptyList()
